@@ -1,0 +1,1709 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>星联调度控制台</title>
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/remixicon@4.3.0/fonts/remixicon.css"
+    />
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    <style>
+      :root {
+        --font-base: "Inter", "Noto Sans SC", system-ui, -apple-system,
+          BlinkMacSystemFont, "Segoe UI", sans-serif;
+        --sidebar-width: 270px;
+        --surface: #081223;
+        --surface-alt: #0d1b33;
+        --surface-panel: rgba(10, 20, 38, 0.9);
+        --surface-elevated: rgba(13, 26, 46, 0.88);
+        --border-soft: rgba(79, 152, 255, 0.18);
+        --border-strong: rgba(96, 165, 250, 0.35);
+        --text-primary: #f8fbff;
+        --text-secondary: rgba(196, 220, 255, 0.74);
+        --accent: #38bdf8;
+        --accent-strong: #22d3ee;
+        color-scheme: dark;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        font-family: var(--font-base);
+        background: radial-gradient(circle at 5% 0%, #1e3a8a 0%, transparent 55%),
+          linear-gradient(160deg, #020617 10%, #050e1f 40%, #000814 90%);
+        color: var(--text-primary);
+        min-height: 100vh;
+        display: flex;
+      }
+      aside {
+        width: var(--sidebar-width);
+        background: linear-gradient(180deg, rgba(5, 12, 24, 0.95) 0%, rgba(5, 8, 16, 0.92) 100%);
+        border-right: 1px solid var(--border-soft);
+        display: flex;
+        flex-direction: column;
+        backdrop-filter: blur(16px);
+      }
+      aside header {
+        padding: 1.75rem 1.4rem 1.25rem;
+        border-bottom: 1px solid rgba(56, 189, 248, 0.12);
+      }
+      .brand {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+      }
+      .brand .brand-meta {
+        display: flex;
+        align-items: center;
+        gap: 0.8rem;
+      }
+      .brand i {
+        font-size: 1.9rem;
+        color: var(--accent);
+      }
+      .brand h3 {
+        margin: 0;
+        font-size: 1.25rem;
+        font-weight: 600;
+      }
+      .platform-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        font-size: 0.75rem;
+        color: var(--text-secondary);
+        background: rgba(56, 189, 248, 0.12);
+        padding: 0.35rem 0.7rem;
+        border-radius: 999px;
+        border: 1px solid rgba(56, 189, 248, 0.28);
+      }
+      nav {
+        flex: 1;
+        padding: 1.2rem 1rem 2rem;
+        overflow-y: auto;
+      }
+      nav h4 {
+        font-size: 0.75rem;
+        text-transform: uppercase;
+        letter-spacing: 0.12em;
+        color: rgba(148, 181, 225, 0.68);
+        margin: 0 0 0.75rem 0.4rem;
+      }
+      nav button {
+        width: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 0.8rem;
+        padding: 0.75rem 0.95rem;
+        border-radius: 12px;
+        border: 1px solid transparent;
+        background: rgba(15, 34, 64, 0.25);
+        color: var(--text-secondary);
+        font-weight: 500;
+        font-size: 0.95rem;
+        transition: all 0.2s ease;
+        cursor: pointer;
+      }
+      nav button span {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.75rem;
+      }
+      nav button i {
+        color: var(--accent);
+        font-size: 1.2rem;
+      }
+      nav button.active,
+      nav button:hover {
+        border-color: rgba(56, 189, 248, 0.45);
+        background: linear-gradient(135deg, rgba(34, 211, 238, 0.18), rgba(56, 189, 248, 0.1));
+        color: var(--text-primary);
+        box-shadow: 0 8px 20px rgba(14, 116, 219, 0.25);
+      }
+      nav .section-sublabel {
+        font-size: 0.7rem;
+        color: rgba(148, 181, 225, 0.55);
+      }
+      main {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        background: transparent;
+      }
+      header.top-bar {
+        padding: 1.4rem 2rem;
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 1.2rem;
+        border-bottom: 1px solid rgba(56, 189, 248, 0.12);
+        background: rgba(4, 10, 20, 0.82);
+        backdrop-filter: blur(16px);
+        position: sticky;
+        top: 0;
+        z-index: 5;
+      }
+      .search-group {
+        flex: 1;
+        min-width: 240px;
+        display: flex;
+        align-items: center;
+        gap: 0.8rem;
+        background: rgba(15, 32, 60, 0.6);
+        border-radius: 12px;
+        padding: 0.3rem 0.9rem;
+        border: 1px solid rgba(15, 118, 230, 0.25);
+      }
+      .search-group label {
+        font-size: 0.8rem;
+        text-transform: uppercase;
+        letter-spacing: 0.12em;
+        color: rgba(148, 181, 225, 0.62);
+      }
+      .search-group input {
+        width: 100%;
+        border: none;
+        background: transparent;
+        color: var(--text-primary);
+      }
+      .search-group input:focus {
+        outline: none;
+      }
+      .top-actions {
+        display: flex;
+        align-items: center;
+        gap: 0.8rem;
+      }
+      .pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        padding: 0.45rem 0.8rem;
+        border-radius: 999px;
+        background: rgba(15, 32, 60, 0.6);
+        border: 1px solid rgba(34, 211, 238, 0.24);
+        font-size: 0.8rem;
+        color: var(--text-secondary);
+      }
+      .top-actions button {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.55rem 1rem;
+        border-radius: 10px;
+        border: 1px solid rgba(56, 189, 248, 0.32);
+        background: linear-gradient(135deg, rgba(37, 99, 235, 0.4), rgba(56, 189, 248, 0.4));
+        color: var(--text-primary);
+        cursor: pointer;
+        transition: transform 0.15s ease, box-shadow 0.15s ease;
+      }
+      .top-actions button:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 10px 20px rgba(56, 189, 248, 0.35);
+      }
+      .section-container {
+        flex: 1;
+        overflow-y: auto;
+        padding: 1.8rem 2.1rem 2.4rem;
+        background: radial-gradient(circle at top right, rgba(14, 116, 219, 0.12) 0%, transparent 45%),
+          radial-gradient(circle at bottom, rgba(8, 145, 178, 0.15) 0%, transparent 35%);
+      }
+      section.panel {
+        background: var(--surface-panel);
+        border-radius: 18px;
+        padding: 1.8rem;
+        margin-bottom: 1.8rem;
+        border: 1px solid rgba(56, 189, 248, 0.14);
+        box-shadow: 0 24px 48px rgba(2, 12, 27, 0.6);
+      }
+      section.panel h2 {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        color: var(--accent-strong);
+        margin: 0 0 1.2rem;
+        font-size: 1.25rem;
+      }
+      section.panel h2 + p {
+        margin-top: -0.2rem;
+        margin-bottom: 1.6rem;
+        color: var(--text-secondary);
+      }
+      .grid {
+        display: grid;
+        gap: 1.3rem;
+      }
+      .grid.cols-3 {
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      }
+      .stat-card {
+        position: relative;
+        background: linear-gradient(135deg, rgba(30, 64, 175, 0.6), rgba(15, 118, 230, 0.35));
+        border-radius: 16px;
+        padding: 1.1rem 1.2rem;
+        border: 1px solid rgba(56, 189, 248, 0.28);
+        box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.04);
+        overflow: hidden;
+      }
+      .stat-card::after {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background: radial-gradient(circle at top right, rgba(56, 189, 248, 0.45), transparent 60%);
+        opacity: 0.6;
+        pointer-events: none;
+      }
+      .stat-card small {
+        position: relative;
+        z-index: 1;
+        text-transform: uppercase;
+        letter-spacing: 0.14em;
+        font-size: 0.7rem;
+        color: rgba(226, 244, 255, 0.78);
+      }
+      .stat-card strong {
+        position: relative;
+        z-index: 1;
+        font-size: 2.2rem;
+        color: #fff;
+        font-weight: 600;
+        display: block;
+        margin-top: 0.35rem;
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 0.95rem;
+      }
+      thead {
+        background: rgba(8, 47, 73, 0.35);
+        color: var(--text-secondary);
+      }
+      thead th {
+        font-weight: 500;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        padding: 0.75rem 0.95rem;
+      }
+      tbody td {
+        padding: 0.7rem 0.95rem;
+        border-bottom: 1px solid rgba(56, 189, 248, 0.08);
+      }
+      tbody tr:hover {
+        background: rgba(15, 118, 230, 0.12);
+      }
+      .table-wrapper {
+        border: 1px solid rgba(56, 189, 248, 0.12);
+        border-radius: 14px;
+        overflow: hidden;
+        background: rgba(5, 12, 24, 0.8);
+        box-shadow: 0 12px 30px rgba(2, 12, 27, 0.4);
+      }
+      .badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.3rem;
+        padding: 0.3rem 0.65rem;
+        border-radius: 999px;
+        font-size: 0.75rem;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        background: rgba(56, 189, 248, 0.12);
+        border: 1px solid rgba(56, 189, 248, 0.24);
+        color: var(--text-secondary);
+      }
+      .status-online {
+        color: #34d399;
+      }
+      .status-offline {
+        color: #f87171;
+      }
+      .status-maintenance {
+        color: #facc15;
+      }
+      form.inline {
+        display: flex;
+        gap: 0.9rem;
+        flex-wrap: wrap;
+        align-items: flex-end;
+        background: rgba(6, 12, 24, 0.8);
+        border-radius: 14px;
+        padding: 1rem;
+        border: 1px solid rgba(56, 189, 248, 0.12);
+      }
+      form.inline label {
+        color: var(--text-secondary);
+      }
+      form button,
+      button.secondary,
+      button.outline {
+        border-radius: 10px;
+        border: 1px solid rgba(56, 189, 248, 0.26);
+        background: rgba(8, 145, 178, 0.25);
+        color: var(--text-primary);
+        cursor: pointer;
+        transition: background 0.2s ease, transform 0.2s ease;
+      }
+      form button:hover,
+      button.secondary:hover,
+      button.outline:hover {
+        background: rgba(56, 189, 248, 0.35);
+        transform: translateY(-1px);
+      }
+      .log-box {
+        background: rgba(3, 8, 18, 0.95);
+        border-radius: 14px;
+        padding: 1rem;
+        font-family: "JetBrains Mono", Consolas, monospace;
+        max-height: 240px;
+        overflow-y: auto;
+        border: 1px solid rgba(56, 189, 248, 0.12);
+      }
+      .two-column {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 1.6rem;
+      }
+      .workflow-console {
+        margin-top: 2rem;
+        padding: 1.6rem;
+        border-radius: 20px;
+        background: rgba(5, 12, 24, 0.88);
+        border: 1px solid rgba(56, 189, 248, 0.14);
+        box-shadow: 0 18px 38px rgba(2, 10, 23, 0.5);
+      }
+      .workflow-console h3 {
+        margin-bottom: 1rem;
+        color: var(--text-primary);
+        display: flex;
+        align-items: center;
+        gap: 0.6rem;
+      }
+      .workflow-console h3 i {
+        font-size: 1.4rem;
+        color: rgba(56, 189, 248, 0.7);
+      }
+      .inline-checkbox {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        color: var(--text-secondary);
+      }
+      .inline-checkbox input {
+        width: auto;
+        accent-color: rgba(56, 189, 248, 0.8);
+      }
+      .table-wrapper.small {
+        max-height: 240px;
+        overflow-y: auto !important;
+        overflow-x: hidden !important;
+      }
+      footer {
+        margin-top: 2.4rem;
+        text-align: center;
+        color: rgba(148, 181, 225, 0.6);
+        font-size: 0.85rem;
+      }
+      ::-webkit-scrollbar {
+        width: 10px;
+      }
+      ::-webkit-scrollbar-thumb {
+        background: rgba(56, 189, 248, 0.2);
+        border-radius: 999px;
+      }
+      ::-webkit-scrollbar-track {
+        background: rgba(8, 11, 19, 0.7);
+      }
+      @media (max-width: 960px) {
+        aside {
+          display: none;
+        }
+        main {
+          margin-left: 0;
+        }
+        header.top-bar {
+          border-left: none;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <aside>
+      <header>
+        <div class="brand">
+          <div class="brand-meta">
+            <i class="ri-planet-line"></i>
+            <div>
+              <h3>星联调度</h3>
+              <small>分钟级可观测 · 秒级调度 · 小时级扩缩容</small>
+            </div>
+          </div>
+          <span class="platform-badge">
+            <i class="ri-command-line"></i> Multi-Platform
+          </span>
+        </div>
+      </header>
+      <nav id="nav-menu">
+        <h4>控制面板</h4>
+        <button data-target="overview" class="active">
+          <span><i class="ri-dashboard-3-line"></i> Overview</span>
+          <span class="section-sublabel">实时总览</span>
+        </button>
+        <button data-target="trends">
+          <span><i class="ri-line-chart-line"></i> Trends</span>
+          <span class="section-sublabel">历史走势</span>
+        </button>
+        <button data-target="pools">
+          <span><i class="ri-database-2-line"></i> Pools / Clusters</span>
+          <span class="section-sublabel">资源水位</span>
+        </button>
+        <button data-target="containers">
+          <span><i class="ri-docker-fill"></i> Containers</span>
+          <span class="section-sublabel">镜像/实例</span>
+        </button>
+        <button data-target="databases">
+          <span><i class="ri-database-line"></i> Databases</span>
+          <span class="section-sublabel">MySQL / Mongo</span>
+        </button>
+        <button data-target="ai">
+          <span><i class="ri-robot-line"></i> AI 托管</span>
+          <span class="section-sublabel">AIDef / Workflow</span>
+        </button>
+        <button data-target="snapshots">
+          <span><i class="ri-camera-lens-line"></i> Snapshots</span>
+          <span class="section-sublabel">备份与回滚</span>
+        </button>
+        <button data-target="gateway">
+          <span><i class="ri-route-line"></i> Gateway</span>
+          <span class="section-sublabel">入口路由</span>
+        </button>
+        <button data-target="policies">
+          <span><i class="ri-shield-keyhole-line"></i> Port & Policy</span>
+          <span class="section-sublabel">安全策略</span>
+        </button>
+        <button data-target="audit">
+          <span><i class="ri-clipboard-line"></i> Audit</span>
+          <span class="section-sublabel">操作痕迹</span>
+        </button>
+      </nav>
+    </aside>
+    <main>
+      <header class="top-bar">
+        <div class="search-group">
+          <label for="global-search">全局搜索</label>
+          <input id="global-search" type="search" placeholder="资产 / 指标 / 日志 / 告警" />
+        </div>
+        <div class="top-actions">
+          <span class="pill" id="maintenance-window">
+            <i class="ri-timer-line"></i> 维护窗：--
+          </span>
+          <button id="refresh-all">
+            <i class="ri-refresh-line"></i> 全量刷新
+          </button>
+          <button id="open-runbook" type="button">
+            <i class="ri-magic-line"></i> 智能运维助手
+          </button>
+        </div>
+      </header>
+      <div class="section-container">
+        <section class="panel" id="section-overview">
+          <h2><i class="ri-dashboard-3-line"></i> 多服务器集中资源面板</h2>
+          <div class="grid cols-3" id="overview-stats"></div>
+          <div class="two-column" style="margin-top: 1.4rem">
+            <div>
+              <h3>资产清单</h3>
+              <div class="table-wrapper">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>名称</th>
+                      <th>状态</th>
+                      <th>池</th>
+                      <th>CPU%</th>
+                      <th>MEM%</th>
+                      <th>健康度</th>
+                    </tr>
+                  </thead>
+                  <tbody id="overview-servers"></tbody>
+                </table>
+              </div>
+              <div style="margin-top: 0.8rem; display: flex; gap: 0.6rem">
+                <button id="export-overview-json" class="secondary">
+                  导出 JSON
+                </button>
+                <button id="export-overview-csv" class="secondary">
+                  导出 CSV
+                </button>
+              </div>
+            </div>
+            <div>
+              <h3>告警与瓶颈</h3>
+              <div class="stat-card" style="margin-bottom: 1rem">
+                <h4>实时告警</h4>
+                <ul id="overview-alerts"></ul>
+              </div>
+              <div class="stat-card">
+                <h4>资源瓶颈</h4>
+                <ul id="overview-bottlenecks"></ul>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="panel" id="section-trends" hidden>
+          <h2><i class="ri-line-chart-line"></i> 资源监控走势线</h2>
+          <form class="inline" id="trend-form">
+            <label>
+              主机 ID 列表
+              <input type="text" id="trend-hosts" placeholder="1,2,3" required />
+            </label>
+            <label>
+              指标
+              <select id="trend-metric">
+                <option value="cpu_usage">CPU Usage %</option>
+                <option value="memory_usage">Memory Usage %</option>
+                <option value="storage_usage">Disk Usage %</option>
+                <option value="network_in_mbps">Net In Mbps</option>
+                <option value="network_out_mbps">Net Out Mbps</option>
+              </select>
+            </label>
+            <label>
+              时间范围 (小时)
+              <input type="number" id="trend-hours" value="6" min="1" max="720" />
+            </label>
+            <button type="submit">绘制趋势</button>
+          </form>
+          <div style="margin-top: 1.4rem">
+            <canvas id="trend-chart" height="220"></canvas>
+          </div>
+          <div id="trend-stats" class="grid cols-3" style="margin-top: 1.4rem"></div>
+        </section>
+
+        <section class="panel" id="section-pools" hidden>
+          <h2><i class="ri-database-2-line"></i> 资源集合面板</h2>
+          <div class="two-column">
+            <div>
+              <h3>资源池列表</h3>
+              <div class="table-wrapper">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>名称</th>
+                      <th>类型</th>
+                      <th>主机数</th>
+                      <th>CPU 水位</th>
+                      <th>内存水位</th>
+                      <th>存储水位</th>
+                    </tr>
+                  </thead>
+                  <tbody id="pool-table"></tbody>
+                </table>
+              </div>
+            </div>
+            <div>
+              <h3>创建 / 移动</h3>
+              <form id="pool-create-form">
+                <label>名称<input required id="pool-name" /></label>
+                <label>
+                  类型
+                  <select id="pool-type">
+                    <option value="compute">Compute</option>
+                    <option value="gpu">GPU</option>
+                    <option value="storage">Storage</option>
+                    <option value="network">Network</option>
+                  </select>
+                </label>
+                <label>描述<textarea id="pool-desc"></textarea></label>
+                <button type="submit">创建资源池</button>
+              </form>
+              <hr />
+              <form id="pool-move-form">
+                <label>服务器 ID<input required id="move-server-id" /></label>
+                <label>目标资源池 ID<input required id="move-pool-id" /></label>
+                <button type="submit">一键迁移</button>
+              </form>
+            </div>
+          </div>
+        </section>
+
+        <section class="panel" id="section-containers" hidden>
+          <h2><i class="ri-docker-fill"></i> Docker 面板</h2>
+          <form class="inline" id="container-filter">
+            <label>宿主机 ID<input type="number" id="container-host" /></label>
+            <button type="submit">查询</button>
+          </form>
+          <div class="table-wrapper" style="margin-top: 1rem">
+            <table>
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>名称</th>
+                  <th>镜像</th>
+                  <th>状态</th>
+                  <th>CPU%</th>
+                  <th>MEM%</th>
+                  <th>操作</th>
+                </tr>
+              </thead>
+              <tbody id="container-table"></tbody>
+            </table>
+          </div>
+          <div style="margin-top: 1rem" class="two-column">
+            <form id="container-create-form">
+              <h4>创建容器</h4>
+              <label>宿主机 ID<input required id="new-container-host" /></label>
+              <label>容器名称<input required id="new-container-name" /></label>
+              <label>镜像<input required id="new-container-image" /></label>
+              <button type="submit">创建</button>
+            </form>
+            <div>
+              <h4>实时日志</h4>
+              <div class="log-box" id="container-logs">请选择容器查看日志</div>
+            </div>
+          </div>
+        </section>
+
+        <section class="panel" id="section-databases" hidden>
+          <h2><i class="ri-database-line"></i> 数据库面板</h2>
+          <div class="two-column">
+            <div>
+              <h3>实例列表</h3>
+              <div class="table-wrapper">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>名称</th>
+                      <th>类型</th>
+                      <th>状态</th>
+                      <th>RPO</th>
+                      <th>RTO</th>
+                      <th>最后备份</th>
+                      <th>操作</th>
+                    </tr>
+                  </thead>
+                  <tbody id="db-table"></tbody>
+                </table>
+              </div>
+            </div>
+            <div>
+              <h3>新增实例</h3>
+              <form id="db-create-form">
+                <label>类型
+                  <select id="db-type">
+                    <option value="mysql">MySQL</option>
+                    <option value="mongodb">MongoDB</option>
+                  </select>
+                </label>
+                <label>名称<input id="db-name" required /></label>
+                <label>DSN / 连接串<input id="db-dsn" required /></label>
+                <label>角色<input id="db-role" /></label>
+                <button type="submit">注册实例</button>
+              </form>
+            </div>
+          </div>
+        </section>
+
+        <section class="panel" id="section-ai" hidden>
+          <h2><i class="ri-robot-line"></i> AI 一键托管 & AIDef</h2>
+          <div class="two-column">
+            <form id="ai-register-form">
+              <h4>注册 AIDef</h4>
+              <label>Owner<input id="ai-owner" /></label>
+              <label>Runtime<input id="ai-runtime" /></label>
+              <label>AIDef YAML<textarea id="ai-yaml" rows="12" placeholder="粘贴 AIDef YAML"></textarea></label>
+              <button type="submit">注册 AIDef</button>
+            </form>
+            <div>
+              <h4>已注册 AIDef</h4>
+              <div class="table-wrapper">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>AID</th>
+                      <th>状态</th>
+                      <th>Owner</th>
+                      <th>操作</th>
+                    </tr>
+                  </thead>
+                  <tbody id="ai-table"></tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+          <div class="workflow-console">
+            <h3><i class="ri-flow-chart-2-line"></i> AI 工作流控制台</h3>
+            <div class="two-column">
+              <form id="workflow-create-form">
+                <h4>创建工作流</h4>
+                <label>名称<input id="workflow-name" required /></label>
+                <label>AIDef
+                  <select id="workflow-aid" required>
+                    <option value="" disabled selected>请选择 AIDef</option>
+                  </select>
+                </label>
+                <label>描述<textarea id="workflow-description" rows="3" placeholder="执行目标 / 守护职责"></textarea></label>
+                <label>调度计划<input id="workflow-schedule" placeholder="如：cron(*/10 * * * *)" /></label>
+                <label>触发器 (JSON)<textarea id="workflow-triggers" rows="3" placeholder='[{"type":"metric_threshold","expr":"..."}]'></textarea></label>
+                <label>执行步骤 (JSON)<textarea id="workflow-playbook" rows="3" placeholder='[{"tool":"run_shell","args":{}}]'></textarea></label>
+                <label>标签 (JSON)<textarea id="workflow-tags" rows="2" placeholder='{"env":"prod"}'></textarea></label>
+                <label class="inline-checkbox">
+                  <input type="checkbox" id="workflow-enabled" checked />启用工作流
+                </label>
+                <button type="submit">保存工作流</button>
+              </form>
+              <div>
+                <h4>工作流列表</h4>
+                <div class="table-wrapper">
+                  <table>
+                    <thead>
+                      <tr>
+                        <th>名称</th>
+                        <th>AIDef</th>
+                        <th>调度</th>
+                        <th>状态</th>
+                        <th>最后运行</th>
+                        <th>操作</th>
+                      </tr>
+                    </thead>
+                    <tbody id="workflow-table"></tbody>
+                  </table>
+                </div>
+                <h4 id="workflow-run-title" style="margin-top: 1.2rem">运行记录</h4>
+                <div class="table-wrapper small">
+                  <table>
+                    <thead>
+                      <tr>
+                        <th>ID</th>
+                        <th>状态</th>
+                        <th>发起人</th>
+                        <th>开始时间</th>
+                        <th>结束时间</th>
+                        <th>结果</th>
+                      </tr>
+                    </thead>
+                    <tbody id="workflow-run-table"></tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="panel" id="section-snapshots" hidden>
+          <h2><i class="ri-camera-lens-line"></i> 服务器快照面板</h2>
+          <form class="inline" id="snapshot-filter">
+            <label>类型
+              <select id="snapshot-type">
+                <option value="">全部</option>
+                <option value="server">Server</option>
+                <option value="volume">Volume</option>
+                <option value="database">Database</option>
+              </select>
+            </label>
+            <button type="submit">查询</button>
+          </form>
+          <div class="table-wrapper" style="margin-top: 1rem">
+            <table>
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>目标类型</th>
+                  <th>目标 ID</th>
+                  <th>类型</th>
+                  <th>状态</th>
+                  <th>创建时间</th>
+                  <th>操作</th>
+                </tr>
+              </thead>
+              <tbody id="snapshot-table"></tbody>
+            </table>
+          </div>
+        </section>
+
+        <section class="panel" id="section-gateway" hidden>
+          <h2><i class="ri-route-line"></i> 中心网关面板</h2>
+          <div class="two-column">
+            <form id="gateway-create-form">
+              <h4>创建网关</h4>
+              <label>名称<input id="gateway-name" required /></label>
+              <label>状态
+                <select id="gateway-status">
+                  <option value="active">Active</option>
+                  <option value="draining">Draining</option>
+                  <option value="disabled">Disabled</option>
+                </select>
+              </label>
+              <label>配置 (JSON)
+                <textarea id="gateway-config" rows="8" placeholder='{"http":{...}}'></textarea>
+              </label>
+              <button type="submit">创建</button>
+            </form>
+            <div>
+              <h4>已配置网关</h4>
+              <div class="table-wrapper">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>名称</th>
+                      <th>状态</th>
+                      <th>配置片段</th>
+                    </tr>
+                  </thead>
+                  <tbody id="gateway-table"></tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="panel" id="section-policies" hidden>
+          <h2><i class="ri-shield-keyhole-line"></i> 端口控制面板</h2>
+          <div class="two-column">
+            <form id="policy-create-form">
+              <h4>新增安全策略</h4>
+              <label>策略 ID / 名称<input id="policy-name" required /></label>
+              <label>作用域 (JSON)<textarea id="policy-scope" rows="4" placeholder='{"labels":{"role":"web"}}'></textarea></label>
+              <label>规则 (JSON)<textarea id="policy-rules" rows="6" placeholder='[{"action":"allow","proto":"tcp","port":"80","src":"0.0.0.0/0"}]'></textarea></label>
+              <button type="submit">创建策略</button>
+            </form>
+            <div>
+              <h4>策略列表 & 预演</h4>
+              <div class="table-wrapper">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>名称</th>
+                      <th>审计</th>
+                      <th>更新时间</th>
+                      <th>预演</th>
+                    </tr>
+                  </thead>
+                  <tbody id="policy-table"></tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="panel" id="section-audit" hidden>
+          <h2><i class="ri-clipboard-line"></i> 审计日志</h2>
+          <div class="table-wrapper">
+            <table>
+              <thead>
+                <tr>
+                  <th>时间</th>
+                  <th>操作人</th>
+                  <th>动作</th>
+                  <th>目标</th>
+                  <th>详情</th>
+                </tr>
+              </thead>
+              <tbody id="audit-table"></tbody>
+            </table>
+          </div>
+        </section>
+        <footer>星联调度 · 统一多服务器资源调度与智能运维平台</footer>
+      </div>
+    </main>
+    <script>
+      const apiBase = "";
+      const navButtons = document.querySelectorAll("#nav-menu button");
+      const sections = document.querySelectorAll("section.panel");
+      let trendChart;
+      let cachedAIDefs = [];
+      let cachedWorkflows = [];
+      let selectedWorkflowId = null;
+
+      const statusClass = (status) => {
+        switch (status) {
+          case "online":
+            return "status-online";
+          case "maintenance":
+            return "status-maintenance";
+          case "offline":
+            return "status-offline";
+          default:
+            return "";
+        }
+      };
+
+      const toJSON = (text, fallback = {}) => {
+        try {
+          return JSON.parse(text);
+        } catch (err) {
+          console.warn("JSON parse error", err);
+          return fallback;
+        }
+      };
+
+      async function fetchJSON(url, options = {}) {
+        const res = await fetch(url, {
+          headers: { "Content-Type": "application/json" },
+          ...options,
+        });
+        if (!res.ok) {
+          const message = await res.text();
+          throw new Error(message || `请求失败 ${res.status}`);
+        }
+        if (res.headers.get("content-type")?.includes("application/json")) {
+          return res.json();
+        }
+        return res.text();
+      }
+
+      function switchSection(target) {
+        sections.forEach((section) => {
+          section.hidden = section.id !== `section-${target}`;
+        });
+        navButtons.forEach((button) => {
+          button.classList.toggle("active", button.dataset.target === target);
+        });
+      }
+
+      navButtons.forEach((btn) => {
+        btn.addEventListener("click", () => {
+          switchSection(btn.dataset.target);
+          const loaderMap = {
+            overview: loadOverview,
+            trends: () => {},
+            pools: loadPools,
+            containers: loadContainers,
+            databases: loadDatabases,
+            ai: () => {
+              loadAIDefs();
+              loadAIWorkflows();
+            },
+            snapshots: () => loadSnapshots(),
+            gateway: loadGateways,
+            policies: loadPolicies,
+            audit: loadAudit,
+          };
+          loaderMap[btn.dataset.target]?.();
+        });
+      });
+
+      async function loadOverview() {
+        try {
+          const data = await fetchJSON(`${apiBase}/overview`);
+          const stats = document.querySelector("#overview-stats");
+          stats.innerHTML = "";
+          const summary = data.summary;
+          const statItems = [
+            { label: "总主机", value: summary.total_hosts },
+            { label: "资源池", value: summary.total_pools },
+            { label: "容器", value: summary.total_containers },
+            { label: "数据库", value: summary.total_databases },
+            { label: "网关", value: summary.total_gateways },
+            { label: "AI 工作流", value: summary.total_ai_workflows ?? 0 },
+            { label: "启用工作流", value: summary.enabled_ai_workflows ?? 0 },
+            { label: "平均健康度", value: summary.average_health },
+          ];
+          statItems.forEach((item) => {
+            const card = document.createElement("div");
+            card.className = "stat-card";
+            card.innerHTML = `<small>${item.label}</small><strong>${item.value}</strong>`;
+            stats.appendChild(card);
+          });
+          const tbody = document.querySelector("#overview-servers");
+          tbody.innerHTML = "";
+          data.servers.forEach((server) => {
+            const metrics = server.metrics || {};
+            const row = document.createElement("tr");
+            row.innerHTML = `
+              <td>${server.name}</td>
+              <td><span class="badge ${statusClass(server.status)}">${server.status}</span></td>
+              <td>${server.pool || "-"}</td>
+              <td>${metrics.cpu ?? "-"}</td>
+              <td>${metrics.memory ?? "-"}</td>
+              <td>${metrics.health ?? "-"}</td>
+            `;
+            tbody.appendChild(row);
+          });
+          const alertList = document.querySelector("#overview-alerts");
+          alertList.innerHTML = data.alerts
+            .map(
+              (item) =>
+                `<li><strong>[${item.severity}] ${item.resource}</strong><br /><small>${item.dimension}=${item.value} (${item.detail})</small></li>`
+            )
+            .join("");
+          const bottleneckList = document.querySelector("#overview-bottlenecks");
+          bottleneckList.innerHTML = data.bottlenecks
+            .map(
+              (item) =>
+                `<li><strong>${item.resource}</strong> → ${item.dimension}: ${item.value}</li>`
+            )
+            .join("");
+        } catch (error) {
+          console.error(error);
+        }
+      }
+
+      async function exportOverview(format) {
+        const res = await fetch(`${apiBase}/overview?export=${format}`);
+        if (format === "csv") {
+          const blob = await res.blob();
+          const url = URL.createObjectURL(blob);
+          const link = document.createElement("a");
+          link.href = url;
+          link.download = "overview.csv";
+          link.click();
+          URL.revokeObjectURL(url);
+        } else {
+          const json = await res.json();
+          const blob = new Blob([JSON.stringify(json, null, 2)], {
+            type: "application/json",
+          });
+          const url = URL.createObjectURL(blob);
+          const link = document.createElement("a");
+          link.href = url;
+          link.download = "overview.json";
+          link.click();
+          URL.revokeObjectURL(url);
+        }
+      }
+
+      async function loadTrends(hosts, metric, hours) {
+        try {
+          const params = new URLSearchParams();
+          hosts.forEach((id) => params.append("host_ids", id));
+          params.append("metric", metric);
+          params.append("hours", hours);
+          const data = await fetchJSON(`${apiBase}/trends?${params.toString()}`);
+          const ctx = document.querySelector("#trend-chart");
+          const labels = [];
+          const datasets = [];
+          const statsContainer = document.querySelector("#trend-stats");
+          statsContainer.innerHTML = "";
+          data.forEach((series) => {
+            const color = `hsl(${Math.floor(Math.random() * 200 + 40)},70%,60%)`;
+            datasets.push({
+              label: `Host ${series.host_id}`,
+              data: series.points.map((pt) => ({ x: pt.timestamp, y: pt.value })),
+              borderColor: color,
+              backgroundColor: color,
+              tension: 0.3,
+              fill: false,
+            });
+            labels.push(...series.points.map((pt) => pt.timestamp));
+            const stat = document.createElement("div");
+            stat.className = "stat-card";
+            stat.innerHTML = `
+              <small>Host ${series.host_id} | ${series.metric}</small>
+              <strong>P95: ${series.percentiles.p95}</strong>
+              <p style="margin-top:0.3rem">P50=${series.percentiles.p50} · P99=${series.percentiles.p99}</p>
+            `;
+            statsContainer.appendChild(stat);
+          });
+          if (trendChart) {
+            trendChart.destroy();
+          }
+          trendChart = new Chart(ctx, {
+            type: "line",
+            data: { datasets },
+            options: {
+              responsive: true,
+              parsing: false,
+              scales: {
+                x: { type: "time", time: { unit: "hour" } },
+                y: { beginAtZero: true },
+              },
+              plugins: {
+                legend: { position: "bottom" },
+              },
+            },
+          });
+        } catch (error) {
+          console.error(error);
+        }
+      }
+
+      async function loadPools() {
+        const tbody = document.querySelector("#pool-table");
+        tbody.innerHTML = "";
+        const pools = await fetchJSON(`${apiBase}/pools`);
+        pools.forEach((pool) => {
+          const cpu = pool.capacity.cpu;
+          const mem = pool.capacity.memory;
+          const storage = pool.capacity.storage;
+          const row = document.createElement("tr");
+          row.innerHTML = `
+            <td>${pool.name}</td>
+            <td>${pool.type}</td>
+            <td>${pool.server_count}</td>
+            <td>${cpu.used}/${cpu.total}</td>
+            <td>${mem.used}/${mem.total}</td>
+            <td>${storage.used}/${storage.total}</td>
+          `;
+          tbody.appendChild(row);
+        });
+      }
+
+      async function loadContainers(hostId) {
+        const tbody = document.querySelector("#container-table");
+        tbody.innerHTML = "";
+        const params = hostId ? `?host=${hostId}` : "";
+        const containers = await fetchJSON(`${apiBase}/api/containers${params}`);
+        containers.forEach((container) => {
+          const row = document.createElement("tr");
+          row.innerHTML = `
+            <td>${container.id}</td>
+            <td>${container.name}</td>
+            <td>${container.image}</td>
+            <td>${container.state}</td>
+            <td>${container.cpu_percent ?? "-"}</td>
+            <td>${container.memory_percent ?? "-"}</td>
+            <td>
+              <button data-op="start" data-id="${container.id}" class="secondary">Start</button>
+              <button data-op="restart" data-id="${container.id}" class="secondary">Restart</button>
+              <button data-op="stop" data-id="${container.id}" class="secondary">Stop</button>
+              <button data-op="logs" data-id="${container.id}" class="outline">Logs</button>
+            </td>
+          `;
+          tbody.appendChild(row);
+        });
+      }
+
+      async function loadDatabases() {
+        const tbody = document.querySelector("#db-table");
+        tbody.innerHTML = "";
+        const databases = await fetchJSON(`${apiBase}/api/databases`);
+        databases.forEach((db) => {
+          const row = document.createElement("tr");
+          row.innerHTML = `
+            <td>${db.name}</td>
+            <td>${db.type}</td>
+            <td>${db.status}</td>
+            <td>${db.rpo_seconds ?? "-"}</td>
+            <td>${db.rto_seconds ?? "-"}</td>
+            <td>${db.last_backup_at ?? "-"}</td>
+            <td><button class="secondary" data-backup="${db.id}">备份</button></td>
+          `;
+          tbody.appendChild(row);
+        });
+      }
+
+      async function loadAIDefs() {
+        const tbody = document.querySelector("#ai-table");
+        tbody.innerHTML = "";
+        const defs = await fetchJSON(`${apiBase}/api/ai/defs`);
+        cachedAIDefs = defs;
+        renderWorkflowAidOptions();
+        defs.forEach((def) => {
+          const row = document.createElement("tr");
+          row.innerHTML = `
+            <td>${def.aid}</td>
+            <td>${def.status}</td>
+            <td>${def.owner ?? "-"}</td>
+            <td><button class="secondary" data-deploy="${def.aid}">部署</button></td>
+          `;
+          tbody.appendChild(row);
+        });
+      }
+
+      function renderWorkflowAidOptions() {
+        const select = document.querySelector("#workflow-aid");
+        if (!select) return;
+        const previous = select.value;
+        const placeholder = document.createElement("option");
+        placeholder.value = "";
+        placeholder.textContent = "请选择 AIDef";
+        placeholder.disabled = true;
+        placeholder.selected = true;
+        select.innerHTML = "";
+        select.appendChild(placeholder);
+        cachedAIDefs.forEach((def) => {
+          const option = document.createElement("option");
+          option.value = def.aid;
+          option.textContent = `${def.aid} · ${def.runtime ?? def.status}`;
+          select.appendChild(option);
+        });
+        if (previous && cachedAIDefs.some((def) => def.aid === previous)) {
+          select.value = previous;
+        } else {
+          select.selectedIndex = 0;
+        }
+      }
+
+      async function loadAIWorkflows() {
+        const tbody = document.querySelector("#workflow-table");
+        tbody.innerHTML = "";
+        const workflows = await fetchJSON(`${apiBase}/api/ai/workflows`);
+        cachedWorkflows = workflows;
+        workflows.forEach((wf) => {
+          const row = document.createElement("tr");
+          const statusLabel = wf.is_enabled ? "启用" : "禁用";
+          const lastRun = wf.last_run_at ? new Date(wf.last_run_at).toLocaleString() : "-";
+          const runStatus = wf.last_run_status ? wf.last_run_status : "-";
+          row.innerHTML = `
+            <td>${wf.name}</td>
+            <td>${wf.aid}</td>
+            <td>${wf.schedule ?? "-"}</td>
+            <td><span class="badge">${statusLabel}</span> / ${runStatus}</td>
+            <td>${lastRun}</td>
+            <td style="display:flex;gap:0.4rem;flex-wrap:wrap;">
+              <button class="secondary" data-action="run" data-id="${wf.id}">执行</button>
+              <button class="secondary" data-action="view" data-id="${wf.id}">运行</button>
+              <button class="secondary" data-action="toggle" data-id="${wf.id}" data-next="${!wf.is_enabled}">${wf.is_enabled ? "禁用" : "启用"}</button>
+              <button class="outline" data-action="delete" data-id="${wf.id}">删除</button>
+            </td>
+          `;
+          tbody.appendChild(row);
+        });
+        if (selectedWorkflowId) {
+          const stillExists = workflows.some((wf) => wf.id === selectedWorkflowId);
+          if (!stillExists) {
+            selectedWorkflowId = null;
+            document.querySelector("#workflow-run-table").innerHTML = "";
+            document.querySelector("#workflow-run-title").textContent = "运行记录";
+          } else {
+            loadAIWorkflowRuns(selectedWorkflowId);
+          }
+        }
+      }
+
+      async function loadAIWorkflowRuns(workflowId) {
+        selectedWorkflowId = workflowId;
+        const tbody = document.querySelector("#workflow-run-table");
+        tbody.innerHTML = "";
+        const runs = await fetchJSON(`${apiBase}/api/ai/workflows/${workflowId}/runs`);
+        const title = document.querySelector("#workflow-run-title");
+        const workflow = cachedWorkflows.find((wf) => wf.id === workflowId);
+        if (title) {
+          title.textContent = workflow
+            ? `运行记录 · ${workflow.name}`
+            : "运行记录";
+        }
+        runs.forEach((run) => {
+          const row = document.createElement("tr");
+          const status = run.status || "-";
+          const resultString = run.result ? JSON.stringify(run.result) : null;
+          const resultSnippet = resultString
+            ? `<code>${resultString.slice(0, 60)}${
+                resultString.length > 60 ? "…" : ""
+              }</code>`
+            : run.error_message
+            ? `<span style="color:#f87171;">${run.error_message}</span>`
+            : "-";
+          row.innerHTML = `
+            <td>${run.id}</td>
+            <td>${status}</td>
+            <td>${run.initiated_by ?? "-"}</td>
+            <td>${new Date(run.started_at).toLocaleString()}</td>
+            <td>${run.finished_at ? new Date(run.finished_at).toLocaleString() : "-"}</td>
+            <td>${resultSnippet}</td>
+          `;
+          tbody.appendChild(row);
+        });
+      }
+
+      async function loadSnapshots(type = "") {
+        const params = type ? `?target_type=${type}` : "";
+        const snapshots = await fetchJSON(`${apiBase}/api/snapshots${params}`);
+        const tbody = document.querySelector("#snapshot-table");
+        tbody.innerHTML = "";
+        snapshots.forEach((snapshot) => {
+          const row = document.createElement("tr");
+          row.innerHTML = `
+            <td>${snapshot.id}</td>
+            <td>${snapshot.target_type}</td>
+            <td>${snapshot.target_id}</td>
+            <td>${snapshot.kind}</td>
+            <td>${snapshot.status}</td>
+            <td>${snapshot.created_at}</td>
+            <td><button class="secondary" data-snapshot="${snapshot.id}">回滚</button></td>
+          `;
+          tbody.appendChild(row);
+        });
+      }
+
+      async function loadGateways() {
+        const gateways = await fetchJSON(`${apiBase}/api/gateways`);
+        const tbody = document.querySelector("#gateway-table");
+        tbody.innerHTML = "";
+        gateways.forEach((gateway) => {
+          const row = document.createElement("tr");
+          row.innerHTML = `
+            <td>${gateway.name}</td>
+            <td>${gateway.status}</td>
+            <td><code>${JSON.stringify(gateway.config).slice(0, 60)}...</code></td>
+          `;
+          tbody.appendChild(row);
+        });
+      }
+
+      async function loadPolicies() {
+        const policies = await fetchJSON(`${apiBase}/policies`);
+        const tbody = document.querySelector("#policy-table");
+        tbody.innerHTML = "";
+        policies.forEach((policy) => {
+          const row = document.createElement("tr");
+          row.innerHTML = `
+            <td>${policy.name}</td>
+            <td>${policy.audit ? "是" : "否"}</td>
+            <td>${policy.updated_at}</td>
+            <td><button class="secondary" data-dryrun="${policy.id}">预演</button></td>
+          `;
+          tbody.appendChild(row);
+        });
+      }
+
+      async function loadAudit() {
+        const logs = await fetchJSON(`${apiBase}/audit/logs`);
+        const tbody = document.querySelector("#audit-table");
+        tbody.innerHTML = "";
+        logs.forEach((log) => {
+          const row = document.createElement("tr");
+          row.innerHTML = `
+            <td>${log.created_at}</td>
+            <td>${log.actor}</td>
+            <td>${log.action}</td>
+            <td>${log.target}</td>
+            <td><code>${JSON.stringify(log.after || log.before || {}, null, 0)}</code></td>
+          `;
+          tbody.appendChild(row);
+        });
+      }
+
+      document
+        .querySelector("#export-overview-json")
+        .addEventListener("click", () => exportOverview("json"));
+      document
+        .querySelector("#export-overview-csv")
+        .addEventListener("click", () => exportOverview("csv"));
+      document.querySelector("#open-runbook").addEventListener("click", () => {
+        switchSection("ai");
+        loadAIDefs();
+        loadAIWorkflows();
+        const aiButton = document.querySelector(
+          "#nav-menu button[data-target='ai']"
+        );
+        aiButton?.classList.add("active");
+      });
+
+      document.querySelector("#trend-form").addEventListener("submit", (e) => {
+        e.preventDefault();
+        const hosts = document
+          .querySelector("#trend-hosts")
+          .value.split(",")
+          .map((v) => v.trim())
+          .filter(Boolean);
+        const metric = document.querySelector("#trend-metric").value;
+        const hours = Number(document.querySelector("#trend-hours").value);
+        loadTrends(hosts, metric, hours);
+      });
+
+      document
+        .querySelector("#container-filter")
+        .addEventListener("submit", (e) => {
+          e.preventDefault();
+          const host = document.querySelector("#container-host").value;
+          loadContainers(host || undefined);
+        });
+
+      document
+        .querySelector("#container-create-form")
+        .addEventListener("submit", async (e) => {
+          e.preventDefault();
+          const payload = {
+            host_id: Number(document.querySelector("#new-container-host").value),
+            name: document.querySelector("#new-container-name").value,
+            image: document.querySelector("#new-container-image").value,
+          };
+          await fetchJSON(`${apiBase}/api/containers`, {
+            method: "POST",
+            body: JSON.stringify(payload),
+          });
+          loadContainers();
+        });
+
+      document
+        .querySelector("#pool-create-form")
+        .addEventListener("submit", async (e) => {
+          e.preventDefault();
+          const payload = {
+            name: document.querySelector("#pool-name").value,
+            type: document.querySelector("#pool-type").value,
+            description: document.querySelector("#pool-desc").value,
+          };
+          await fetchJSON(`${apiBase}/pools`, {
+            method: "POST",
+            body: JSON.stringify(payload),
+          });
+          loadPools();
+        });
+
+      document
+        .querySelector("#pool-move-form")
+        .addEventListener("submit", async (e) => {
+          e.preventDefault();
+          const payload = {
+            server_id: Number(document.querySelector("#move-server-id").value),
+            target_pool_id: Number(document.querySelector("#move-pool-id").value),
+          };
+          await fetchJSON(`${apiBase}/pools/move`, {
+            method: "POST",
+            body: JSON.stringify(payload),
+          });
+          loadPools();
+        });
+
+      document
+        .querySelector("#db-create-form")
+        .addEventListener("submit", async (e) => {
+          e.preventDefault();
+          const payload = {
+            type: document.querySelector("#db-type").value,
+            name: document.querySelector("#db-name").value,
+            dsn: document.querySelector("#db-dsn").value,
+            role: document.querySelector("#db-role").value,
+          };
+          await fetchJSON(`${apiBase}/api/databases`, {
+            method: "POST",
+            body: JSON.stringify(payload),
+          });
+          loadDatabases();
+        });
+
+      document
+        .querySelector("#gateway-create-form")
+        .addEventListener("submit", async (e) => {
+          e.preventDefault();
+          const payload = {
+            name: document.querySelector("#gateway-name").value,
+            status: document.querySelector("#gateway-status").value,
+            config: toJSON(document.querySelector("#gateway-config").value, {}),
+          };
+          await fetchJSON(`${apiBase}/api/gateways`, {
+            method: "POST",
+            body: JSON.stringify(payload),
+          });
+          loadGateways();
+        });
+
+      document
+        .querySelector("#policy-create-form")
+        .addEventListener("submit", async (e) => {
+          e.preventDefault();
+          const payload = {
+            name: document.querySelector("#policy-name").value,
+            scope: toJSON(document.querySelector("#policy-scope").value, {}),
+            rules: toJSON(document.querySelector("#policy-rules").value, []),
+          };
+          await fetchJSON(`${apiBase}/policies`, {
+            method: "POST",
+            body: JSON.stringify(payload),
+          });
+          loadPolicies();
+        });
+
+      document
+        .querySelector("#snapshot-filter")
+        .addEventListener("submit", (e) => {
+          e.preventDefault();
+          loadSnapshots(document.querySelector("#snapshot-type").value);
+        });
+
+      document
+        .querySelector("#ai-register-form")
+        .addEventListener("submit", async (e) => {
+          e.preventDefault();
+          const payload = {
+            owner: document.querySelector("#ai-owner").value || null,
+            runtime: document.querySelector("#ai-runtime").value || null,
+            yaml: document.querySelector("#ai-yaml").value,
+          };
+          await fetchJSON(`${apiBase}/api/ai/defs`, {
+            method: "POST",
+            body: JSON.stringify(payload),
+          });
+          loadAIDefs();
+        });
+
+      document
+        .querySelector("#workflow-create-form")
+        .addEventListener("submit", async (e) => {
+          e.preventDefault();
+          const triggersText = document
+            .querySelector("#workflow-triggers")
+            .value.trim();
+          const playbookText = document
+            .querySelector("#workflow-playbook")
+            .value.trim();
+          const tagsText = document.querySelector("#workflow-tags").value.trim();
+          const payload = {
+            name: document.querySelector("#workflow-name").value,
+            aid: document.querySelector("#workflow-aid").value,
+            description:
+              document.querySelector("#workflow-description").value.trim() || null,
+            schedule:
+              document.querySelector("#workflow-schedule").value.trim() || null,
+            triggers: triggersText ? toJSON(triggersText, []) : null,
+            playbook: playbookText ? toJSON(playbookText, []) : null,
+            tags: tagsText ? toJSON(tagsText, {}) : null,
+            is_enabled: document.querySelector("#workflow-enabled").checked,
+          };
+          await fetchJSON(`${apiBase}/api/ai/workflows`, {
+            method: "POST",
+            body: JSON.stringify(payload),
+          });
+          e.target.reset();
+          document.querySelector("#workflow-enabled").checked = true;
+          renderWorkflowAidOptions();
+          loadAIWorkflows();
+          loadOverview();
+        });
+
+      document
+        .querySelector("#workflow-table")
+        .addEventListener("click", async (e) => {
+          const target = e.target;
+          if (!(target instanceof HTMLElement)) return;
+          if (target.tagName !== "BUTTON") return;
+          const id = Number(target.dataset.id);
+          if (!id) return;
+          const action = target.dataset.action;
+          if (action === "run") {
+            await fetchJSON(`${apiBase}/api/ai/workflows/${id}/run`, {
+              method: "POST",
+              body: JSON.stringify({ operator: "console" }),
+            });
+            loadAIWorkflows();
+            loadAIWorkflowRuns(id);
+            setTimeout(() => loadAIWorkflowRuns(id), 2500);
+          } else if (action === "toggle") {
+            const next = target.dataset.next === "true";
+            await fetchJSON(`${apiBase}/api/ai/workflows/${id}`, {
+              method: "PATCH",
+              body: JSON.stringify({ is_enabled: next }),
+            });
+            loadAIWorkflows();
+            loadOverview();
+          } else if (action === "delete") {
+            if (!confirm("确认删除该工作流？")) return;
+            await fetchJSON(`${apiBase}/api/ai/workflows/${id}`, {
+              method: "DELETE",
+            });
+            loadAIWorkflows();
+            loadOverview();
+          } else if (action === "view") {
+            loadAIWorkflowRuns(id);
+          }
+        });
+
+      document
+        .querySelector("#container-table")
+        .addEventListener("click", async (e) => {
+          if (e.target.tagName !== "BUTTON") return;
+          const id = e.target.dataset.id;
+          const op = e.target.dataset.op;
+          if (op === "logs") {
+            const res = await fetchJSON(`${apiBase}/api/logs/containers/${id}`);
+            document.querySelector("#container-logs").textContent = res.logs;
+          } else {
+            await fetchJSON(`${apiBase}/api/containers/${id}/actions`, {
+              method: "POST",
+              body: JSON.stringify({ op }),
+            });
+            loadContainers();
+          }
+        });
+
+      document
+        .querySelector("#db-table")
+        .addEventListener("click", async (e) => {
+          if (e.target.tagName !== "BUTTON") return;
+          const id = e.target.dataset.backup;
+          if (!id) return;
+          await fetchJSON(`${apiBase}/api/databases/${id}/backup`, {
+            method: "POST",
+            body: JSON.stringify({ strategy: "full", verify: true }),
+          });
+          loadDatabases();
+        });
+
+      document
+        .querySelector("#ai-table")
+        .addEventListener("click", async (e) => {
+          if (e.target.tagName !== "BUTTON") return;
+          const aid = e.target.dataset.deploy;
+          await fetchJSON(`${apiBase}/api/ai/deploy`, {
+            method: "POST",
+            body: JSON.stringify({ aid }),
+          });
+          loadAIDefs();
+        });
+
+      document
+        .querySelector("#snapshot-table")
+        .addEventListener("click", async (e) => {
+          if (e.target.tagName !== "BUTTON") return;
+          const id = e.target.dataset.snapshot;
+          await fetchJSON(`${apiBase}/api/snapshots/${id}/actions`, {
+            method: "POST",
+            body: JSON.stringify({ op: "rollback" }),
+          });
+          loadSnapshots();
+        });
+
+      document
+        .querySelector("#policy-table")
+        .addEventListener("click", async (e) => {
+          if (e.target.tagName !== "BUTTON") return;
+          const id = e.target.dataset.dryrun;
+          const labels = prompt("请输入用于预演的标签 JSON", '{"env":"prod"}');
+          if (!labels) return;
+          const result = await fetchJSON(`${apiBase}/policies/${id}/dry-run`, {
+            method: "POST",
+            body: JSON.stringify({ target_labels: toJSON(labels, {}) }),
+          });
+          alert(result.summary);
+        });
+
+      document.querySelector("#refresh-all").addEventListener("click", () => {
+        loadOverview();
+        loadPools();
+        loadContainers();
+        loadDatabases();
+        loadAIDefs();
+        loadSnapshots();
+        loadGateways();
+        loadPolicies();
+        loadAudit();
+      });
+
+      // 初始化
+      loadOverview();
+      loadPools();
+      loadContainers();
+      loadDatabases();
+      loadAIDefs();
+      loadSnapshots();
+      loadGateways();
+      loadPolicies();
+      loadAudit();
+      document.querySelector("#maintenance-window").textContent = "维护窗：周日 02:00-03:00";
+
+      if (window.xinglianDesktop?.platform) {
+        window.xinglianDesktop.platform().then((platform) => {
+          const badge = document.querySelector(".platform-badge");
+          if (!badge) return;
+          const platformLabel =
+            platform === "darwin"
+              ? "macOS 桌面版"
+              : platform === "win32"
+              ? "Windows 桌面版"
+              : "Linux 桌面版";
+          badge.innerHTML = `<i class="ri-computer-line"></i> ${platformLabel}`;
+        });
+      }
+    </script>
+  </body>
+</html>

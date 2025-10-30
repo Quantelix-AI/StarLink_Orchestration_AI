@@ -1,0 +1,21 @@
+{
+  "name": "xinglian-dispatcher-desktop",
+  "version": "0.1.0",
+  "description": "跨平台的星联调度桌面控制台（macOS、Windows、Linux）",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "package:mac": "electron-packager . XinglianDispatcher --platform=darwin --arch=x64 --out=dist --overwrite",
+    "package:win": "electron-packager . \"Xinglian Dispatcher\" --platform=win32 --arch=x64 --out=dist --overwrite",
+    "package:linux": "electron-packager . xinglian-dispatcher --platform=linux --arch=x64 --out=dist --overwrite",
+    "package:all": "npm run package:mac && npm run package:win && npm run package:linux"
+  },
+  "dependencies": {
+    "electron": "^28.2.0"
+  },
+  "devDependencies": {
+    "electron-packager": "^17.1.1"
+  },
+  "author": "Nebula Intelligence",
+  "license": "Apache-2.0"
+}
