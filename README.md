@@ -2,6 +2,15 @@
 
 StarLink Orchestration is an open-source resource orchestration system for multi-architecture server clusters, providing a web console and RESTful API to help operations and development teams manage heterogeneous resources such as x86, ARM, and RISC-V uniformly, achieving cross-architecture scheduling, container/database/snapshot governance, and AI hosting capabilities.
 
+
+[![GitHub Stars](https://img.shields.io/github/stars/starlink-labs/StarLink-Orchestration?style=for-the-badge&color=gold)](https://github.com/starlink-labs/StarLink-Orchestration/stargazers)
+[![GitHub Forks](https://img.shields.io/github/forks/starlink-labs/StarLink-Orchestration?style=for-the-badge&color=blueviolet)](https://github.com/starlink-labs/StarLink-Orchestration/network/members)
+[![License](https://img.shields.io/github/license/starlink-labs/StarLink-Orchestration?style=for-the-badge&color=green)](./LICENSE)
+[![Python](https://img.shields.io/badge/Backend-FastAPI-009688?style=for-the-badge&logo=fastapi)](https://fastapi.tiangolo.com/)
+[![Electron](https://img.shields.io/badge/Desktop-Electron-2C2E3B?style=for-the-badge&logo=electron)](https://www.electronjs.org/)
+[![React](https://img.shields.io/badge/Frontend-React-61DAFB?style=for-the-badge&logo=react)](https://react.dev/)
+[![Platform](https://img.shields.io/badge/Supports-x86_64%20%7C%20ARM%20%7C%20RISC--V-orange?style=for-the-badge)]()
+
 ## Features
 
 - **Multi-architecture Scheduling**: Records server hardware architectures and automatically matches the most suitable nodes during task scheduling while deducting resource quotas.
